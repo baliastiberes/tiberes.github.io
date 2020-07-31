@@ -1,0 +1,160 @@
+function [output] = segment_N(imgr )
+        imbw = thres_Alias(imgr, 100); %thresholds the image utiling a threshold number of 100
+    se = strel('square',3); %creates a 5x5 kernel for morph. filtering
+    medpens= medfilt2(imbw, [3 3]); %removes some fuzziness of the image, so less erosion/dilations 
+        %need to preformed
+    erodedpens = imerode(medpens,se); %erodes image (best to use after thresholding)
+    dilatedpens = imdilate(erodedpens,se); %dilates image (best to use after thresholding)
+    dilatedpens = imdilate(dilatedpens,se); %dilates image (best to use after thresholding)
+    erodedpens = imerode(dilatedpens,se);
+    dilatedpens = imdilate(erodedpens,se); 
+    dilatedpens = imdilate(dilatedpens,se); 
+    erodedpens = imerode(dilatedpens,se);
+    erodedpens = imerode(erodedpens,se);
+    erodedpens = imerode(erodedpens,se);
+    erodedpens = imerode(erodedpens,se);
+    erodedpens = imerode(erodedpens,se);
+    erodedpens = imerode(erodedpens,se); % repeat the dilation and erodes until there are only large seperate segments
+    imshow(erodedpens); % display the image with after the erosions and dilations
+    
+    [r,c] = size(erodedpens);% finds the size of the image, i.e. the number of rows and columns
+    indexValue = zeros(r,c); %create matrix of similar size to the image
+    number = 1; %initialize a number
+    
+    
+    % This section labels each pixel value that is black with a number, and
+    % those without values are labeled as 0
+    for row = 1:r
+        for column = 1:c %nested loops to search through the image
+            if erodedpens(row,column) ~= 0 %check if value at index is non-zero
+                indexValue(row,column) = 0; %if equal to zero set to 0 in another matrix at the same location
+            else
+                indexValue(row,column) = number; % if not equal to zero, label that index in another matrix, as a number
+                number = number +1; % if a index is labeled with a number the number now progresses
+            end
+        end
+    end
+    
+    %first half of segmentation, going from the top right to the bottom
+    %left. The values are compared to all the values surrounding it, in a
+    %3x3 square to check if it a smaller number , if it is then the array
+    %value being checked is updated to be the smaller number.(if
+    %the value is a 0 it is not able to be inserted as a smaller number.)
+    for row = 1:r-1
+        for column = 1:c-1 % nested loops for searching
+            if indexValue(row,column) ~= 0  %checks if value is non-zero, reduces calculation time
+                % from here it just checks a 3x3 box around the value and
+                % updates it.
+                if indexValue(row-1, column-1) < indexValue(row,column) && indexValue(row-1, column-1) ~= 0
+                    indexValue(row,column) = indexValue(row-1, column-1);
+                end
+                if indexValue(row-1, column) < indexValue(row,column) && indexValue(row-1, column) ~= 0
+                    indexValue(row,column) = indexValue(row-1, column);
+                end
+                if indexValue(row-1, column+1) < indexValue(row,column) && indexValue(row-1, column+1) ~= 0
+                    indexValue(row,column) = indexValue(row-1, column+1);  
+                end
+                    
+                if indexValue(row, column-1) < indexValue(row,column) && indexValue(row, column-1) ~= 0
+                    indexValue(row,column) = indexValue(row, column-1); 
+                end
+                if indexValue(row, column+1) < indexValue(row,column) && indexValue(row, column+1) ~= 0
+                    indexValue(row,column) = indexValue(row, column+1); 
+                end
+                    
+                if indexValue(row+1, column-1) < indexValue(row,column) && indexValue(row+1, column-1) ~= 0
+                    indexValue(row,column) = indexValue(row+1, column-1);
+                end
+                if indexValue(row+1, column) < indexValue(row,column) && indexValue(row+1, column) ~= 0
+                    indexValue(row,column) = indexValue(row+1, column);
+                end
+                if indexValue(row+1, column+1) < indexValue(row,column) && indexValue(row+1, column+1) ~= 0
+                    indexValue(row,column) = indexValue(row+1, column+1);   
+                end
+            end
+        end
+    end
+    
+    %This function operates similarly to the above function but it instead
+    %runs from the bottome left to the top right
+    for row = r-1:-1:1
+        for column = c-1:-1:1
+            if indexValue(row,column) ~= 0 
+                if indexValue(row-1, column-1) < indexValue(row,column) && indexValue(row-1, column-1) ~= 0
+                    indexValue(row,column) = indexValue(row-1, column-1);
+                end
+                if indexValue(row-1, column) < indexValue(row,column) && indexValue(row-1, column) ~= 0
+                    indexValue(row,column) = indexValue(row-1, column);
+                end
+                if indexValue(row-1, column+1) < indexValue(row,column) && indexValue(row-1, column+1) ~= 0
+                    indexValue(row,column) = indexValue(row-1, column+1);  
+                end
+                    
+                if indexValue(row, column-1) < indexValue(row,column) && indexValue(row, column-1) ~= 0
+                    indexValue(row,column) = indexValue(row, column-1); 
+                end
+                if indexValue(row, column+1) < indexValue(row,column) && indexValue(row, column+1) ~= 0
+                    indexValue(row,column) = indexValue(row, column+1); 
+                end
+                    
+                if indexValue(row+1, column-1) < indexValue(row,column) && indexValue(row+1, column-1) ~= 0
+                    indexValue(row,column) = indexValue(row+1, column-1);
+                end
+                if indexValue(row+1, column) < indexValue(row,column) && indexValue(row+1, column) ~= 0
+                    indexValue(row,column) = indexValue(row+1, column);
+                end
+                if indexValue(row+1, column+1) < indexValue(row,column) && indexValue(row+1, column+1) ~= 0
+                    indexValue(row,column) = indexValue(row+1, column+1);   
+                end
+                
+            end
+        end
+    end
+    
+    %from here the main array used for analysis (indexValue) now houses the
+    %segmented images, each with their own non-zero number that indicates
+    %the image
+    
+    %The following code finds the values that is attached to each
+    %segment, segment identifying numbers, and fills a seperate array
+    values = [];
+    
+    for row = 1:r-1
+        for column = 1:c-1 %nested loops
+            if indexValue(row,column) ~= 0 %check for non-zero
+                if find(indexValue(row, column) ~= 0)
+                    if ~ismember(indexValue(row,column), values) %checks if
+                    %the value being check already exists, if it does then
+                    %it loops to the next index. If it doesn't then it is
+                    %added to the array.
+                        values = [values indexValue(row,column)];
+                    end
+                end
+            end
+        end
+    end
+    
+    %this function is used to color the segments different color, or in
+    %this case different shades of grey.
+    for row = 1:r-1
+        for column = 1:c-1% nested loops
+            if indexValue(row,column) ~= 0 %check for nonzeros
+                erodedpens(row,column) = 30* find(values == indexValue(row,column));
+                    %the above line works to update the image by first
+                    %comparing the current index value to the list of the
+                    %segment identifing numbers, and return the position
+                    %that its in inside segment indentifing numbers array
+                    %(i.e. 1,2,3,4,or 5) which is then multiplied by 30,
+                    %and added to the image array, which updates the color of
+                    %the different segments with different shades of grey.
+       
+            end
+        end
+    end
+    
+    
+
+%output the information out of the function
+output = erodedpens;
+end
+
